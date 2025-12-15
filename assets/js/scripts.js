@@ -100,7 +100,10 @@ jQuery(document).ready(function($) {
             return false;
         }
         
-        var formData = $form.serialize();
+        // Get the active tab to send to server
+        var activeTab = $form.find('.pz-tab-content.active').attr('id');
+        
+        var formData = $form.serialize() + '&active_tab=' + activeTab;
         var submitBtn = $form.find('.pz-submit-btn');
         var originalText = submitBtn.text();
         
@@ -134,6 +137,7 @@ jQuery(document).ready(function($) {
             },
             error: function(xhr, status, error) {
                 console.error('AJAX Error:', status, error);
+                console.error('Response:', xhr.responseText);
                 alert('An error occurred. Please try again.');
                 submitBtn.text(originalText).prop('disabled', false);
             }
