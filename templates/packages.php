@@ -158,4 +158,4 @@ jQuery(document).ready(function($) {
         window.location.href = checkoutUrl;
     });
 });
-</script><?php
+</script>
