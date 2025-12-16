@@ -247,45 +247,62 @@ class PZ_License_System {
      * Handle enroll button redirects
      */
     public function handle_enroll_redirect() {
-        if (isset($_GET['pz_enroll']) && class_exists('WooCommerce')) {
-            $package = sanitize_text_field($_GET['pz_enroll']);
-            
-            // Get product IDs
-            $school_product_id = get_option('pz_school_product_id');
-            $student_product_id = get_option('pz_student_product_id');
-            
-            $product_id = ($package === 'school') ? $school_product_id : $student_product_id;
-            
-            if (!$product_id) {
-                wp_die('Product not found. Please contact administrator.');
-            }
-            
-            // Check if user is logged in
-            if (!is_user_logged_in()) {
-                // Store intended action in session
+        // Check if the pz_enroll parameter exists
+        if (!isset($_GET['pz_enroll'])) {
+            return;
+        }
+        
+        // Check if WooCommerce is active
+        if (!class_exists('WooCommerce')) {
+            wp_die('WooCommerce is required for this functionality.');
+        }
+        
+        $package = sanitize_text_field($_GET['pz_enroll']);
+        
+        // Validate package type
+        if (!in_array($package, array('school', 'student'))) {
+            wp_die('Invalid package type.');
+        }
+        
+        // Get product IDs
+        $school_product_id = get_option('pz_school_product_id');
+        $student_product_id = get_option('pz_student_product_id');
+        
+        $product_id = ($package === 'school') ? $school_product_id : $student_product_id;
+        
+        if (!$product_id || !get_post($product_id)) {
+            wp_die('Product not found. Please contact administrator. Product ID: ' . $product_id);
+        }
+        
+        // Check if user is logged in
+        if (!is_user_logged_in()) {
+            // Store intended action in session
+            if (WC()->session) {
                 WC()->session->set('pz_enroll_package', $package);
                 WC()->session->set('pz_enroll_product_id', $product_id);
-                
-                // Redirect to my account page (login/register)
-                $my_account_url = wc_get_page_permalink('myaccount');
-                wp_redirect($my_account_url);
-                exit;
             }
             
-            // User is logged in - add product to cart and redirect to checkout
-            WC()->cart->empty_cart();
-            WC()->cart->add_to_cart($product_id);
-            
-            // Store school name in session if it's a school package
+            // Redirect to my account page (login/register)
+            $my_account_url = wc_get_page_permalink('myaccount');
+            wp_safe_redirect($my_account_url);
+            exit;
+        }
+        
+        // User is logged in - add product to cart and redirect to checkout
+        WC()->cart->empty_cart();
+        WC()->cart->add_to_cart($product_id);
+        
+        // Store package type in session
+        if (WC()->session) {
             if ($package === 'school') {
                 WC()->session->set('pz_package_type', 'school');
             } else {
                 WC()->session->set('pz_package_type', 'student');
             }
-            
-            wp_redirect(wc_get_checkout_url());
-            exit;
         }
+        
+        wp_safe_redirect(wc_get_checkout_url());
+        exit;
     }
     
     /**
@@ -517,6 +534,11 @@ class PZ_License_System {
      */
     public function render_packages($atts) {
         ob_start();
+        
+        // Get product IDs
+        $school_product_id = get_option('pz_school_product_id');
+        $student_product_id = get_option('pz_student_product_id');
+        
         include PZ_LICENSE_PATH . 'templates/packages.php';
         return ob_get_clean();
     }
