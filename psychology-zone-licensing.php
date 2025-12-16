@@ -116,7 +116,13 @@ class PZ_License_System {
      * Handle manual product creation
      */
     public function handle_product_creation() {
+        // Only proceed if we're on the setup page and action is set
         if (!isset($_GET['page']) || $_GET['page'] !== 'pz-setup-products') {
+            return;
+        }
+        
+        // Only create products if the action parameter is set
+        if (!isset($_GET['action']) || $_GET['action'] !== 'create') {
             return;
         }
         
@@ -127,7 +133,7 @@ class PZ_License_System {
         // Create products
         $this->create_products();
         
-        // Redirect with success message
+        // Redirect with success message (remove the action parameter)
         wp_redirect(admin_url('admin.php?page=pz-setup-products&created=1'));
         exit;
     }
@@ -713,7 +719,7 @@ class PZ_License_System {
                 
                 <?php if (!$school_exists || !$student_exists): ?>
                     <p style="margin-top: 20px;">
-                        <a href="<?php echo admin_url('admin.php?page=pz-setup-products'); ?>" class="button button-primary button-large">
+                        <a href="<?php echo admin_url('admin.php?page=pz-setup-products&action=create'); ?>" class="button button-primary button-large">
                             Create Products Now
                         </a>
                     </p>
@@ -744,6 +750,30 @@ class PZ_License_System {
                     <li>Make sure WooCommerce is properly configured with payment methods</li>
                     <li>Check that the products are published (not draft)</li>
                 </ul>
+                
+                <h3>Debug Information</h3>
+                <table class="widefat">
+                    <tr>
+                        <th style="width: 200px;">WooCommerce Active</th>
+                        <td><?php echo class_exists('WooCommerce') ? '<span style="color: green;">✓ Yes</span>' : '<span style="color: red;">✗ No</span>'; ?></td>
+                    </tr>
+                    <tr>
+                        <th>School Product ID</th>
+                        <td><?php echo $school_product_id ? $school_product_id : 'Not set'; ?></td>
+                    </tr>
+                    <tr>
+                        <th>Student Product ID</th>
+                        <td><?php echo $student_product_id ? $student_product_id : 'Not set'; ?></td>
+                    </tr>
+                    <tr>
+                        <th>Test Enroll URL</th>
+                        <td>
+                            <a href="<?php echo home_url('/?pz_enroll=student'); ?>" target="_blank">
+                                <?php echo home_url('/?pz_enroll=student'); ?>
+                            </a>
+                        </td>
+                    </tr>
+                </table>
             </div>
         </div>
         <?php
